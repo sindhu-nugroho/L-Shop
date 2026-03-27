@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\PaymentController;
+use App\Models\product;
 
 
 Route::get('/', function () {
@@ -17,8 +18,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Dashboard User
     Route::get('/dashboard', function () {
-        return view('user.dashboard');
+        $products = product::latest()->get();
+        return view('user.dashboard', compact('products'));
     })->name('dashboard');
+
+    Route::post('/checkout/{product}', [PaymentController::class, 'checkout'])
+        ->name('checkout.store');
+
+    Route::post('/payment/status', [PaymentController::class, 'updateStatus'])
+        ->name('payment.status.update');
 
     // Profile User (default Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])
@@ -31,6 +39,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('profile.destroy');
 });
 
+Route::post('/payment/notification', [PaymentController::class, 'notification'])
+    ->name('payment.notification');
+
 // Admin routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
@@ -40,7 +51,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('products', ProductController::class);
 
     Route::get('/checkout-monitor', function () {
-        $orders = \App\Models\Monitor::with('user')->get(); 
+        $orders = \App\Models\Monitor::with('user')->latest()->get();
         return view('admin.checkoutMonitor.index', compact('orders'));
     })->name('checkout-monitor.index');
   
