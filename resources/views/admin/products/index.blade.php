@@ -30,13 +30,19 @@
             <form method="POST" action="{{ route('admin.products.destroy',$product)}}">
               @csrf @method('DELETE')
               <button onclick="return confirm('Hapus Produk?')"
-                class="bg-red-600 text-white px-3 py-1 rounded">
+                class="bg-red-600 text-white px-4 py-2 rounded">
                 Delete
               </button>
             </form>
+
+            <button class="bg-green-600 text-white px-4 py-2 rounded">
+              Checkout
+            </button>
           </div>
         </div>
       </div>
     @endforeach
   </div>
+
+
 </x-app-layout>
