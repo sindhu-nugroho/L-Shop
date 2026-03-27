@@ -17,7 +17,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Dashboard User
     Route::get('/dashboard', function () {
-        return view('dashboard');
+        return view('user.dashboard');
     })->name('dashboard');
 
     // Profile User (default Breeze)
@@ -35,9 +35,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
-    })->name('admin.dashboard');
+    })->name('dashboard');
 
     Route::resource('products', ProductController::class);
+
+    Route::get('/checkout-monitor', function () {
+        $orders = \App\Models\Monitor::with('user')->get(); 
+        return view('admin.checkoutMonitor.index', compact('orders'));
+    })->name('checkout-monitor.index');
+  
     Route::post('/get-snap-token', [PaymentController::class, 'getSnapToken']);
 });
 
