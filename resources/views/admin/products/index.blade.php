@@ -19,7 +19,7 @@
         @endif
 
         <div class="p-6">
-          <h3 class="text-lg font-semibold">{{ $product->name }}</h3>
+          <h3 class="text-lg font-semibold text-black dark:text-white">{{ $product->name }}</h3>
           <p class="text-gray-600 dark:text-gray-400">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
           
           <div class="flex gap-2 mt-4">
