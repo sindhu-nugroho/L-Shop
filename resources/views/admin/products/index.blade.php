@@ -27,9 +27,8 @@
               Edit
             </a>
 
-            <button class="pay-button bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold transition" 
-                    data-price="{{ $product->price }}" 
-                    data-name="{{ $product->name }}">
+                <button class="pay-button bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold transition"
+                  data-checkout-url="{{ route('admin.checkout.store', $product->id) }}">
               Beli Sekarang
             </button>
 
@@ -53,50 +52,66 @@
     data-client-key="{{ config('services.midtrans.clientKey') }}"></script>
   <script type="text/javascript">
     const payButtons = document.querySelectorAll('.pay-button');
-    
-    payButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Ambil data price & name dari atribut tombol yang diklik
-            const price = this.getAttribute('data-price');
-            const name = this.getAttribute('data-name');
 
-            // Request Token ke Controller Laravel Anda
-            fetch('/admin/get-snap-token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}' // Token keamanan bawaan Laravel
-                },
-                body: JSON.stringify({ 
-                    price: price,
-                    item_name: name 
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.error) {
-                    alert('Error: ' + data.error);
-                    return;
+    async function updatePaymentStatus(monitorId, status) {
+      await fetch('{{ route('admin.payment.status.update') }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ monitor_id: monitorId, status })
+      });
+    }
+
+    payButtons.forEach(button => {
+      button.addEventListener('click', async function() {
+        const checkoutUrl = this.getAttribute('data-checkout-url');
+        const initialLabel = this.textContent;
+        this.disabled = true;
+        this.textContent = 'Memproses...';
+
+        try {
+          const response = await fetch(checkoutUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': '{{ csrf_token() }}',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({ quantity: 1 })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.snap_token) {
+            throw new Error(data.message || 'Gagal memulai transaksi.');
                 }
-                
-                // Eksekusi Popup Midtrans menggunakan token yang didapat
+
                 window.snap.pay(data.snap_token, {
-                    onSuccess: function(result) { 
-                        alert("Pembayaran Berhasil!"); 
-                        window.location.reload(); 
+            onSuccess: async function() {
+              await updatePaymentStatus(data.monitor_id, 'paid');
+              window.location.reload();
                     },
-                    onPending: function(result) { 
-                        alert("Selesaikan pembayaran Anda di gerai/bank."); 
+            onPending: async function() {
+              await updatePaymentStatus(data.monitor_id, 'pending');
+              window.location.reload();
                     },
-                    onError: function(result) { 
-                        alert("Pembayaran Gagal."); 
+            onError: async function() {
+              await updatePaymentStatus(data.monitor_id, 'failed');
+              window.location.reload();
+            },
+            onClose: async function() {
+              await updatePaymentStatus(data.monitor_id, 'failed');
+              window.location.reload();
                     }
                 });
-            })
-            .catch(err => {
-                console.error('Fetch Error:', err);
-                alert('Gagal menghubungi server pembayaran.');
-            });
+        } catch (error) {
+          alert(error.message || 'Gagal menghubungi server pembayaran.');
+          this.disabled = false;
+          this.textContent = initialLabel;
+        }
         });
     });
   </script>
