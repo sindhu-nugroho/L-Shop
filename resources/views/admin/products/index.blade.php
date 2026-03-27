@@ -27,11 +27,6 @@
               Edit
             </a>
 
-                <button class="pay-button bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold transition"
-                  data-checkout-url="{{ route('admin.checkout.store', $product->id) }}">
-              Beli Sekarang
-            </button>
-
             <form method="POST" action="{{ route('admin.products.destroy',$product)}}">
               @csrf @method('DELETE')
               <button onclick="return confirm('Hapus Produk?')"
@@ -39,65 +34,80 @@
                 Delete
               </button>
             </form>
+
+            <form method="POST" action="{{ route('admin.checkout.store', $product->id) }}" class="checkout-form">
+              @csrf
+              <input
+                type="number"
+                name="quantity"
+                min="1"
+                value="1"
+                class="w-20 rounded border-gray-300 text-sm"
+              >
+              <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">
+                Checkout
+              </button>
+            </form>
           </div>
         </div>
       </div>
     @endforeach
   </div>
-</x-app-layout>
 
-<x-app-layout>
   <script type="text/javascript"
     src="https://app.sandbox.midtrans.com/snap/snap.js"
     data-client-key="{{ config('services.midtrans.clientKey') }}"></script>
   <script type="text/javascript">
-    const payButtons = document.querySelectorAll('.pay-button');
+    const checkoutForms = document.querySelectorAll('.checkout-form');
 
     async function updatePaymentStatus(monitorId, status) {
       await fetch('{{ route('admin.payment.status.update') }}', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ monitor_id: monitorId, status })
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ monitor_id: monitorId, status })
       });
     }
 
-    payButtons.forEach(button => {
-      button.addEventListener('click', async function() {
-        const checkoutUrl = this.getAttribute('data-checkout-url');
-        const initialLabel = this.textContent;
-        this.disabled = true;
-        this.textContent = 'Memproses...';
+    checkoutForms.forEach((form) => {
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Memproses...';
 
         try {
-          const response = await fetch(checkoutUrl, {
+          const response = await fetch(form.action, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
               'X-CSRF-TOKEN': '{{ csrf_token() }}',
-              'Accept': 'application/json'
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ quantity: 1 })
+            body: JSON.stringify({
+              quantity: form.querySelector('input[name="quantity"]').value
+            })
           });
 
           const data = await response.json();
 
           if (!response.ok || !data.snap_token) {
             throw new Error(data.message || 'Gagal memulai transaksi.');
-                }
+          }
 
-                window.snap.pay(data.snap_token, {
+          window.snap.pay(data.snap_token, {
             onSuccess: async function() {
               await updatePaymentStatus(data.monitor_id, 'paid');
               window.location.reload();
-                    },
+            },
             onPending: async function() {
               await updatePaymentStatus(data.monitor_id, 'pending');
               window.location.reload();
-                    },
+            },
             onError: async function() {
               await updatePaymentStatus(data.monitor_id, 'failed');
               window.location.reload();
@@ -105,14 +115,14 @@
             onClose: async function() {
               await updatePaymentStatus(data.monitor_id, 'failed');
               window.location.reload();
-                    }
-                });
+            }
+          });
         } catch (error) {
           alert(error.message || 'Gagal menghubungi server pembayaran.');
-          this.disabled = false;
-          this.textContent = initialLabel;
+          submitButton.disabled = false;
+          submitButton.textContent = 'Checkout';
         }
-        });
+      });
     });
   </script>
 </x-app-layout>
