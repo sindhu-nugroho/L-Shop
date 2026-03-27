@@ -15,7 +15,12 @@ class Monitor extends Model
      * @var array
      */
     protected $fillable = [
-        'user_id', 'total', 'status'
+        'user_id',
+        'order_id',
+        'product_name',
+        'quantity',
+        'total',
+        'status',
     ];
 
     /**
