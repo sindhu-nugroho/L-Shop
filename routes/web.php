@@ -3,9 +3,12 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\PaymentController;
+
 
 Route::get('/', function () {
     return view('welcome');
+    
 });
 
 // user routes
@@ -40,6 +43,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         $orders = \App\Models\Monitor::with('user')->get(); 
         return view('admin.checkoutMonitor.index', compact('orders'));
     })->name('checkout-monitor.index');
+  
+    Route::post('/get-snap-token', [PaymentController::class, 'getSnapToken']);
 });
 
 
