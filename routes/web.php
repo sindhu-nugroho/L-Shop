@@ -50,11 +50,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::resource('products', ProductController::class);
 
+    Route::post('/checkout/{product}', [PaymentController::class, 'checkout'])
+        ->name('checkout.store');
+
+    Route::post('/payment/status', [PaymentController::class, 'updateStatus'])
+        ->name('payment.status.update');
+
     Route::get('/checkout-monitor', function () {
         $orders = \App\Models\Monitor::with('user')->latest()->get();
         return view('admin.checkoutMonitor.index', compact('orders'));
-    })->name('checkout-monitor.index');
-  
+    })->name('checkout-monitor.index'); 
     Route::post('/get-snap-token', [PaymentController::class, 'getSnapToken']);
 });
 
