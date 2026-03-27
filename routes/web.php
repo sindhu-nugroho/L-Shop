@@ -3,9 +3,12 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\PaymentController;
+
 
 Route::get('/', function () {
     return view('welcome');
+    
 });
 
 // user routes
@@ -35,6 +38,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     })->name('admin.dashboard');
 
     Route::resource('products', ProductController::class);
+    Route::post('/get-snap-token', [PaymentController::class, 'getSnapToken']);
 });
 
 

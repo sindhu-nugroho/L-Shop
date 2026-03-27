@@ -23,7 +23,7 @@ class ProductController extends Controller
             'name' => 'required',
             'description' => 'nullable',
             'price' => 'required|integer',
-            'image' => 'nullable|mimes:jpg,jpeg,png',
+            'image' => 'nullable|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $imagePath = null;
